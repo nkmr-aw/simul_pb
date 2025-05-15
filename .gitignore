@@ -1,0 +1,12 @@
+.idea/
+build/
+dist/
+docs/
+venv/
+libmpv-1.dll
+libmpv-2.dll
+*.ini
+*.json
+*.spec
+*.txt
+!requirements.txt
