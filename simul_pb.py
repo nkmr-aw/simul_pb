@@ -8,12 +8,13 @@ import time
 import traceback
 
 
+version = "1.0.0"
 
 
 class VideoPlayerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Multi Video Player with Drag & Drop")
+        self.root.title("Simul PB v" + version)
 
         # メインのPanedWindowを作成
         self.main_paned = tk.PanedWindow(root, orient=tk.VERTICAL, sashwidth=1, showhandle=False)
