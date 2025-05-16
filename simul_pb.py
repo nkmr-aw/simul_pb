@@ -14,28 +14,28 @@ class VideoPlayerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Multi Video Player with Drag & Drop")
-        
+
         # メインのPanedWindowを作成
         self.main_paned = tk.PanedWindow(root, orient=tk.VERTICAL, sashwidth=1, showhandle=False)
         self.main_paned.grid(row=0, column=0, columnspan=8, sticky="nsew")
-        
+
         # rootのグリッド設定
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
-        
+
         # 動画プレーヤー用のフレーム
         self.player_frame = tk.Frame(self.main_paned)
         self.main_paned.add(self.player_frame, sticky="nsew", stretch="always")
-        
+
         # ボタン群用のフレーム
         self.bottom_frame = tk.Frame(self.main_paned, height=180)
         self.bottom_frame.pack_propagate(False)  # サイズを固定
         self.main_paned.add(self.bottom_frame, sticky="sew", stretch="never")
-        
+
         # PanedWindowの初期分割位置を設定
         self.root.update_idletasks()
         self.main_paned.sash_place(0, 0, self.root.winfo_height() - 280)
-        
+
         self.players = [None] * 4
         self.video_files = [None] * 4
         self.volume_labels = [None] * 4
@@ -162,7 +162,7 @@ class VideoPlayerApp:
             for vo in vo_candidates:
                 try:
                     self.players[index] = mpv.MPV(wid=str(frame.winfo_id()), vo=vo, log_handler=self.log_handler,
-                                                 loglevel='info', keep_open='yes', hwdec='auto', 
+                                                 loglevel='info', keep_open='yes', hwdec='auto',
                                                  demuxer_lavf_o='fps=24')
                     self.property_handlers[index]['end-file'] = lambda name, value: self.on_end_file(index, value)
                     self.property_handlers[index]['eof-reached'] = lambda name, value: self.on_eof_reached(index, value)
@@ -195,7 +195,7 @@ class VideoPlayerApp:
     def on_end_file(self, index, value):
         if not value or self.loop_enabled:
             return
-        
+
         try:
             player = self.players[index]
             if not player or getattr(player, 'core_shutdown', False):
@@ -239,7 +239,7 @@ class VideoPlayerApp:
     def on_eof_reached(self, index, value):
         if not value or self.loop_enabled:
             return
-        
+
         try:
             player = self.players[index]
             if not player or getattr(player, 'core_shutdown', False):
@@ -283,7 +283,7 @@ class VideoPlayerApp:
     def on_idle(self, index, value):
         if not value or self.loop_enabled:
             return
-        
+
         try:
             player = self.players[index]
             if not player or getattr(player, 'core_shutdown', False):
@@ -393,18 +393,18 @@ class VideoPlayerApp:
     def create_buttons(self):
         self.button_frame = tk.Frame(self.bottom_frame)
         self.button_frame.pack(fill=tk.X, expand=True, pady=1)
-        
+
         # ボタン用の内部フレーム
         button_inner_frame = tk.Frame(self.button_frame)
         button_inner_frame.pack(anchor="center")
-        
+
         self.play_button = tk.Button(button_inner_frame, text="Play All", command=self.toggle_play)
         self.play_button.pack(side=tk.LEFT, padx=5)
         reset_button = tk.Button(button_inner_frame, text="Reset", command=self.reset_all)
         reset_button.pack(side=tk.LEFT, padx=5)
         self.loop_button = tk.Button(button_inner_frame, text="Loop Off", command=self.toggle_loop)
         self.loop_button.pack(side=tk.LEFT, padx=5)
-        self.layout_button = tk.Button(button_inner_frame, text="1x4 Layout", command=self.toggle_layout)
+        self.layout_button = tk.Button(button_inner_frame, text="Change Layout", command=self.toggle_layout)
         self.layout_button.pack(side=tk.LEFT, padx=5)
         self.mute_button = tk.Button(button_inner_frame, text="Mute", command=self.toggle_mute)
         self.mute_button.pack(side=tk.LEFT, padx=5)
@@ -436,8 +436,8 @@ class VideoPlayerApp:
         for i in range(4):
             try:
                 player = self.players[i]
-                if (player and not getattr(player, 'core_shutdown', False) and 
-                    self.video_files[i] and not player.pause and not player.idle_active and 
+                if (player and not getattr(player, 'core_shutdown', False) and
+                    self.video_files[i] and not player.pause and not player.idle_active and
                     self.progress_sliders[i]):
                     time_pos = player.time_pos
                     if time_pos is not None:
@@ -661,49 +661,96 @@ class VideoPlayerApp:
         print(f"{'Muted' if self.is_muted else 'Unmuted'} all players, restored volumes: {self.previous_volumes if not self.is_muted else []}")
 
     def toggle_layout(self):
-        self.layout_mode = "1x4" if self.layout_mode == "2x2" else "2x2"
+        # レイアウトモードを順番に切り替え
+        layout_modes = ["1x4", "1x3", "1x2", "1x1", "2x2"]
+        current_index = layout_modes.index(self.layout_mode)
+        self.layout_mode = layout_modes[(current_index + 1) % len(layout_modes)]
+
+        # すべての動画フレームを一旦非表示に
+        for i in range(4):
+            frame = self.player_frame.nametowidget(f"frame{i}")
+            frame.grid_remove()
+            if self.progress_sliders[i]:
+                self.progress_sliders[i].grid_remove()
+            volume_frame = self.player_frame.nametowidget(f"volume_frame{i}")
+            volume_frame.grid_remove()
+
+        # グリッド設定をリセット
         for i in range(8):
             self.player_frame.grid_rowconfigure(i, weight=0, minsize=0)
             self.player_frame.grid_columnconfigure(i, weight=0, minsize=0)
-        
+
+        # レイアウトモードに応じた配置
         if self.layout_mode == "2x2":
+            # 2x2レイアウトの設定
             for i in range(2):
-                self.player_frame.grid_rowconfigure(2*i, weight=1)
-                self.player_frame.grid_rowconfigure(2*i+1, weight=0, minsize=50)
-                self.player_frame.grid_columnconfigure(2*i, weight=1)
-                self.player_frame.grid_columnconfigure(2*i+1, weight=0, minsize=160)
-            self.player_frame.grid_rowconfigure(4, weight=0)
-        else:
+                self.player_frame.grid_rowconfigure(2 * i, weight=1)
+                self.player_frame.grid_rowconfigure(2 * i + 1, weight=0, minsize=50)
+                self.player_frame.grid_columnconfigure(2 * i, weight=1)
+                self.player_frame.grid_columnconfigure(2 * i + 1, weight=0, minsize=160)
+            visible_players = 4
+            window_size = "760x680"
+        elif self.layout_mode == "1x4":
+            # 1x4レイアウトの設定
             self.player_frame.grid_rowconfigure(0, weight=1)
             self.player_frame.grid_rowconfigure(1, weight=0, minsize=50)
-            self.player_frame.grid_rowconfigure(2, weight=0)
             for i in range(4):
-                self.player_frame.grid_columnconfigure(2*i, weight=1)
-                self.player_frame.grid_columnconfigure(2*i+1, weight=0, minsize=160)
+                self.player_frame.grid_columnconfigure(2 * i, weight=1)
+                self.player_frame.grid_columnconfigure(2 * i + 1, weight=0, minsize=160)
+            visible_players = 4
+            window_size = "1280x400"
+        elif self.layout_mode == "1x3":
+            # 1x3レイアウトの設定
+            self.player_frame.grid_rowconfigure(0, weight=1)
+            self.player_frame.grid_rowconfigure(1, weight=0, minsize=50)
+            for i in range(3):
+                self.player_frame.grid_columnconfigure(2 * i, weight=1)
+                self.player_frame.grid_columnconfigure(2 * i + 1, weight=0, minsize=160)
+            visible_players = 3
+            window_size = "960x400"
+        elif self.layout_mode == "1x2":
+            # 1x2レイアウトの設定
+            self.player_frame.grid_rowconfigure(0, weight=1)
+            self.player_frame.grid_rowconfigure(1, weight=0, minsize=50)
+            for i in range(2):
+                self.player_frame.grid_columnconfigure(2 * i, weight=1)
+                self.player_frame.grid_columnconfigure(2 * i + 1, weight=0, minsize=160)
+            visible_players = 2
+            window_size = "640x400"
+        else:  # "1x1"
+            # 1x1レイアウトの設定
+            self.player_frame.grid_rowconfigure(0, weight=1)
+            self.player_frame.grid_rowconfigure(1, weight=0, minsize=50)
+            self.player_frame.grid_columnconfigure(0, weight=1)
+            self.player_frame.grid_columnconfigure(1, weight=0, minsize=160)
+            visible_players = 1
+            window_size = "400x400"
 
-        for i in range(4):
+        # 表示する動画フレームの配置
+        for i in range(visible_players):
             frame = self.player_frame.nametowidget(f"frame{i}")
-            if self.layout_mode == "2x2":
-                frame.grid(row=2*(i//2), column=2*(i%2), columnspan=2, padx=5, pady=5, sticky="nsew")
-            else:
-                frame.grid(row=0, column=2*i, columnspan=2, padx=5, pady=5, sticky="nsew")
             progress_slider = self.progress_sliders[i]
             volume_frame = self.player_frame.nametowidget(f"volume_frame{i}")
+
             if self.layout_mode == "2x2":
-                progress_slider.grid(row=2*(i//2)+1, column=2*(i%2), padx=5, pady=5, sticky="ew")
-                volume_frame.grid(row=2*(i//2)+1, column=2*(i%2)+1, padx=5, pady=5, sticky="w")
+                frame.grid(row=2 * (i // 2), column=2 * (i % 2), columnspan=2, padx=5, pady=5, sticky="nsew")
+                progress_slider.grid(row=2 * (i // 2) + 1, column=2 * (i % 2), padx=5, pady=5, sticky="ew")
+                volume_frame.grid(row=2 * (i // 2) + 1, column=2 * (i % 2) + 1, padx=5, pady=5, sticky="w")
             else:
-                progress_slider.grid(row=1, column=2*i, padx=5, pady=(5, 0), sticky="ew")
-                volume_frame.grid(row=1, column=2*i+1, padx=5, pady=(5, 0), sticky="w")
-        if self.layout_mode == "2x2":
-            self.button_frame.pack_forget()
-            self.button_frame.pack(fill=tk.X, expand=True, pady=1)
-        else:
-            self.button_frame.pack_forget()
-            self.button_frame.pack(fill=tk.X, expand=True, pady=1)
-        self.root.geometry("760x680" if self.layout_mode == "2x2" else "1280x400")
-        self.layout_button.config(text="1x4 Layout" if self.layout_mode == "2x2" else "2x2 Layout")
-        print(f"Switched to {self.layout_mode} layout")
+                frame.grid(row=0, column=2 * i, columnspan=2, padx=5, pady=5, sticky="nsew")
+                progress_slider.grid(row=1, column=2 * i, padx=5, pady=(5, 0), sticky="ew")
+                volume_frame.grid(row=1, column=2 * i + 1, padx=5, pady=(5, 0), sticky="w")
+
+        # ボタンフレームの再配置
+        self.button_frame.pack_forget()
+        self.button_frame.pack(fill=tk.X, expand=True, pady=1)
+
+        # ウィンドウサイズの更新
+        if not self.is_fullscreen:
+            self.root.geometry(window_size)
+        # ボタンテキストを更新したい場合
+        # self.layout_button.config(text=f"{self.layout_mode} Layout")
+        # print(f"Switched to {self.layout_mode} layout")
 
     def toggle_fullscreen(self, event=None):
         self.is_fullscreen = not self.is_fullscreen
