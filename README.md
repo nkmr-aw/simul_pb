@@ -8,4 +8,4 @@ Simultaneous video playback app
 - libmpv-2.dll (download from https://mpv.io/ and place it on the folder where the main.py is located.)
 
 ## Usage
-
+Run "simul_pb_launcher.pyw" after installation.
