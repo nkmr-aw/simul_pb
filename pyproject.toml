@@ -1,0 +1,10 @@
+[project]
+name = "simul-pb"
+version = "1.0.1"
+description = "none"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "python-mpv>=1.0.8",
+    "tkinterdnd2>=0.4.3",
+]
