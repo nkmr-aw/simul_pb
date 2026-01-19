@@ -10,7 +10,7 @@ Simultaneous video playback app
 Clone the repository to an appropriate location.
 
 #### Using uv (Recommended)
-1. Run `uv sync` in the project directory to set up the environment.
+1. Run `uv sync --frozen` in the project directory to set up the environment.
 2. Run `simul_pb_launcher.pyw`.
 
 #### Using pip
