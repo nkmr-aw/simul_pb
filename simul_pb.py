@@ -8,7 +8,7 @@ import time
 import traceback
 
 
-version = "1.0.1"
+version = "1.0.2"
 
 
 class VideoPlayerApp:
